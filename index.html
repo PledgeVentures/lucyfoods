@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucy Foods Co. | Freshly Prepared Meals Delivered</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+
+    <!-- Social Sharing / Open Graph Preview -->
+    <meta property="og:title" content="Lucy Foods Co. | Freshly Prepared Meals Delivered">
+    <meta property="og:description" content="Freshly prepared meals, bold flavors, and a little Brazilian inspiration in every bite. Local delivery to Mount Bethel, Portland & the Slate Belt.">
+    <meta property="og:image" content="https://pledgeventures.github.io/lucyfoods/preview.jpg">
+    <meta property="og:url" content="https://pledgeventures.github.io/lucyfoods/">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lucy Foods Co. | Freshly Prepared Meals Delivered">
+    <meta name="twitter:description" content="Freshly prepared meals, bold flavors, and a little Brazilian inspiration in every bite.">
+    <meta name="twitter:image" content="https://pledgeventures.github.io/lucyfoods/preview.jpg">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            green: '#2A5C38', // Inspired by the logo leaves
+                            yellow: '#D99B29', // Inspired by the logo smile
+                            dark: '#1C1C1C',
+                            light: '#F9F8F6', // Warm off-white for background
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F9F8F6;
+            color: #1C1C1C;
+            scroll-behavior: smooth;
+        }
+        /* Hide scrollbar for clean horizontal scrolling if needed */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Cart Slide-in Animation */
+        #cart-panel {
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+        }
+        @media (min-width: 768px) {
+            #cart-panel {
+                transform: translateX(100%);
+            }
+        }
+        #cart-panel.open {
+            transform: translateY(0);
+        }
+        @media (min-width: 768px) {
+            #cart-panel.open {
+                transform: translateX(0);
+            }
+        }
+
+        /* Toast Animation */
+        #toast {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="antialiased relative">
+
+    <nav class="fixed w-full bg-white/90 backdrop-blur-md z-40 border-b border-gray-100 transition-all" id="navbar">
+        <div class="max-w-6xl mx-auto px-4 h-20 flex justify-between items-center">
+            <!-- Brand -->
+            <div class="flex-shrink-0 flex items-center gap-3">
+                <img src="LF main Logo.jpg" alt="Lucy Foods Co. Logo" class="h-16 w-16 object-contain rounded-full border border-gray-100" onerror="this.src='https://placehold.co/100x100/2A5C38/FFFFFF?text=LF'">
+                <div class="hidden sm:block">
+                    <h1 class="font-serif font-semibold text-xl tracking-wide text-brand-dark">Lucy Foods Co.</h1>
+                </div>
+            </div>
+
+            <!-- Notice / CTA -->
+            <div class="hidden md:flex items-center gap-6">
+                <p class="text-sm text-gray-500 italic">Order early for local delivery.</p>
+                <button onclick="scrollToMenu()" class="text-sm font-medium text-brand-green hover:text-brand-yellow transition-colors">View Menu</button>
+            </div>
+
+            <!-- Cart Trigger -->
+            <button onclick="toggleCart()" class="relative p-2 text-brand-dark hover:text-brand-green transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-basket-shopping text-xl"></i>
+                <span id="nav-cart-count" class="absolute top-0 right-0 -mt-1 -mr-1 bg-brand-yellow text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center opacity-0 transition-opacity">0</span>
+                <span class="hidden sm:inline font-medium text-sm ml-1" id="nav-cart-total">$0.00</span>
+            </button>
+        </div>
+        <!-- Delivery Banner -->
+        <div class="bg-brand-green text-white text-xs text-center py-1.5 px-4 font-medium tracking-wide">
+            Free delivery to Mount Bethel, Portland & the Slate Belt
+        </div>
+    </nav>
+
+    <header class="pt-32 pb-16 md:pt-40 md:pb-24 px-4">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+            <!-- Text Content -->
+            <div class="flex-1 text-center md:text-left space-y-6">
+                <span class="text-brand-yellow font-semibold tracking-wider text-sm uppercase">Weekly Meal Packages</span>
+                <h2 class="font-serif text-4xl md:text-6xl font-bold leading-tight text-brand-dark">
+                    Good food.<br>
+                    <span class="text-brand-green">Made with care.</span>
+                </h2>
+                <p class="text-lg text-gray-600 max-w-lg mx-auto md:mx-0 leading-relaxed">
+                    Freshly prepared meals, bold flavors, and a little Brazilian inspiration in every bite. One less thing to worry about this week.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
+                    <button onclick="scrollToMenu()" class="bg-brand-green text-white px-8 py-4 rounded-full font-medium hover:bg-emerald-800 transition-colors shadow-lg shadow-emerald-900/20">
+                        Order for the Week
+                    </button>
+                    <div class="flex items-center justify-center gap-3 text-sm text-gray-500">
+                        <i class="fa-solid fa-clock text-brand-yellow"></i>
+                        <span>Pre-orders welcome</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hero Images (Placeholders ready for real food photography) -->
+            <div class="flex-1 relative w-full max-w-md mx-auto md:max-w-none">
+                <!-- Main Image -->
+                <div class="aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl relative z-10 border-4 border-white">
+                    <img src="https://placehold.co/600x800/1C1C1C/FFFFFF?text=Appetizing+Hero+Dish\n(e.g.+Braised+Beef)" alt="Delicious freshly prepared meal" class="w-full h-full object-cover">
+                </div>
+                <!-- Secondary Image overlay -->
+                <div class="absolute -bottom-8 -left-8 w-48 aspect-square rounded-full overflow-hidden shadow-xl border-4 border-white z-20 hidden md:block">
+                    <img src="https://placehold.co/400x400/D99B29/FFFFFF?text=Packaging+Shot" alt="Secure local meal delivery" class="w-full h-full object-cover">
+                </div>
+                <!-- Graphic element -->
+                <div class="absolute -top-4 -right-4 w-24 h-24 bg-brand-yellow rounded-full opacity-20 z-0"></div>
+            </div>
+        </div>
+    </header>
+
+    <section class="bg-white py-16 px-4 border-y border-gray-100">
+        <div class="max-w-5xl mx-auto text-center space-y-12">
+            <h3 class="font-serif text-3xl font-bold text-brand-dark">How to order</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="space-y-4">
+                    <div class="w-16 h-16 bg-brand-light text-brand-green rounded-full flex items-center justify-center mx-auto text-2xl mb-2">1</div>
+                    <h4 class="font-semibold text-lg">Choose Your Meals</h4>
+                    <p class="text-gray-500 text-sm">Mix & match 5 or 10 meals for the best value. Add sides and desserts.</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="w-16 h-16 bg-brand-light text-brand-green rounded-full flex items-center justify-center mx-auto text-2xl mb-2">2</div>
+                    <h4 class="font-semibold text-lg">Order Early</h4>
+                    <p class="text-gray-500 text-sm">Secure your week's food early. Checkout sends your request via WhatsApp or SMS.</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="w-16 h-16 bg-brand-light text-brand-green rounded-full flex items-center justify-center mx-auto text-2xl mb-2">3</div>
+                    <h4 class="font-semibold text-lg">Local Delivery</h4>
+                    <p class="text-gray-500 text-sm">Freshly prepared and delivered straight to your door. Zero dinner stress.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main id="menu-section" class="py-16 md:py-24 px-4 max-w-5xl mx-auto">
+        <div class="text-center mb-16 space-y-4">
+            <h2 class="font-serif text-4xl md:text-5xl font-bold text-brand-dark">This Week's Menu</h2>
+            <p class="text-brand-green font-medium text-lg">5 Meals for $65 &nbsp;&bull;&nbsp; 10 Meals for $120 &nbsp;&bull;&nbsp; Mix & Match</p>
+            <p class="text-sm text-gray-500 max-w-md mx-auto">Premium selections marked with add-on pricing. Base price estimated for single items until bundles are reached.</p>
+        </div>
+
+        <!-- Menu Categories will be injected here via JS -->
+        <div id="menu-container" class="space-y-16 pb-24">
+            <!-- Dynamic Content -->
+        </div>
+    </main>
+
+    <footer class="bg-brand-dark text-white pt-16 pb-8 px-4 text-center md:text-left">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-gray-800 pb-12 mb-8">
+            <div class="space-y-4">
+                <h4 class="font-serif text-2xl font-bold mb-6">Lucy Foods Co.</h4>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Brazilian inspiration. Global flavor.<br>
+                    Good food makes the week better.
+                </p>
+            </div>
+            <div class="space-y-4">
+                <h4 class="font-bold tracking-wider text-sm uppercase text-brand-yellow mb-6">Delivery Areas</h4>
+                <ul class="text-gray-400 text-sm space-y-2">
+                    <li>Mount Bethel</li>
+                    <li>Stroudsburg</li>
+                    <li>Delaware Water Gap</li>
+                    <li>Portland & the Slate Belt</li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <h4 class="font-bold tracking-wider text-sm uppercase text-brand-yellow mb-6">Contact & Social</h4>
+                <p class="text-gray-400 text-sm flex items-center justify-center md:justify-start gap-2">
+                    <i class="fa-solid fa-phone"></i> +1 (570) 236-8787
+                </p>
+                <div class="flex gap-4 justify-center md:justify-start pt-2">
+                    <a href="https://api.whatsapp.com/send?phone=15702368787" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-brand-green transition-colors">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </a>
+                    <a href="https://m.me/LucyFoodsCo" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-600 transition-colors">
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="text-gray-500 text-xs text-center">
+            &copy; <span id="year"></span> Lucy Foods Co. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Overlay Background -->
+    <div id="cart-overlay" onclick="toggleCart()" class="fixed inset-0 bg-black/50 z-50 hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+    
+    <!-- Cart Panel -->
+    <div id="cart-panel" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-white z-50 shadow-2xl flex flex-col">
+        <!-- Cart Header -->
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+            <h3 class="font-serif text-2xl font-bold text-brand-dark">Your Order</h3>
+            <button onclick="toggleCart()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Deal Progress Bar -->
+        <div class="px-6 py-4 bg-brand-light border-b border-gray-200" id="cart-progress-container">
+            <div class="flex justify-between text-xs font-semibold text-gray-600 mb-2">
+                <span>Mix & Match Progress</span>
+                <span id="cart-progress-text">0 / 5 Meals</span>
+            </div>
+            <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="cart-progress-bar" class="h-full bg-brand-green transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <p id="cart-progress-hint" class="text-xs text-brand-green mt-2 font-medium italic">Add 5 meals to unlock the $65 bundle!</p>
+        </div>
+
+        <!-- Cart Items List -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-4" id="cart-items-container">
+            <!-- Dynamic Cart Items go here -->
+            <div class="h-full flex flex-col items-center justify-center text-gray-400 space-y-4" id="empty-cart-msg">
+                <i class="fa-solid fa-basket-shopping text-4xl"></i>
+                <p>Your cart is empty.</p>
+            </div>
+        </div>
+
+        <!-- Cart Footer / Checkout -->
+        <div class="border-t border-gray-100 bg-white p-6 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+            <div class="space-y-2 mb-6">
+                <div class="flex justify-between text-gray-500 text-sm">
+                    <span>Base Meals Total</span>
+                    <span id="cart-subtotal">$0.00</span>
+                </div>
+                <div class="flex justify-between text-gray-500 text-sm">
+                    <span>Premium Add-ons & Extras</span>
+                    <span id="cart-extras">$0.00</span>
+                </div>
+                <div class="flex justify-between font-bold text-xl text-brand-dark pt-2 border-t border-gray-100">
+                    <span>Total Estimated</span>
+                    <span id="cart-total">$0.00</span>
+                </div>
+            </div>
+            
+            <p class="text-xs text-center text-gray-400 mb-4">Send your order list to us to confirm and arrange payment/delivery.</p>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="checkout('whatsapp')" class="w-full bg-[#25D366] text-white py-3 rounded-lg font-medium hover:bg-[#1DA851] transition-colors flex flex-col items-center justify-center shadow-md">
+                    <span class="text-xs opacity-90 block mb-0.5">Place Order</span>
+                    <span class="flex items-center gap-2"><i class="fa-brands fa-whatsapp text-lg"></i> WhatsApp</span>
+                </button>
+                <button onclick="checkout('sms')" class="w-full bg-brand-dark text-white py-3 rounded-lg font-medium hover:bg-black transition-colors flex flex-col items-center justify-center shadow-md">
+                    <span class="text-xs opacity-70 block mb-0.5">Place Order</span>
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-comment-sms text-lg"></i> Text SMS</span>
+                </button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <button onclick="checkout('call')" class="w-full bg-transparent border border-gray-300 text-gray-600 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-phone text-gray-600"></i> Call to Order
+                </button>
+                <button onclick="checkout('facebook')" class="w-full bg-transparent border border-gray-300 text-gray-600 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-facebook text-blue-600"></i> Facebook DM
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Checkout Bar (visible when items in cart & panel closed) -->
+    <div id="floating-checkout-bar" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[90%] max-w-sm bg-brand-green text-white rounded-2xl shadow-2xl transition-transform duration-300 translate-y-32 z-40">
+        <button onclick="toggleCart()" class="w-full flex items-center justify-between px-6 py-4">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <i class="fa-solid fa-basket-shopping text-xl"></i>
+                    <span id="float-cart-count" class="absolute -top-2 -right-2 bg-brand-yellow text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                </div>
+                <span class="font-medium text-sm">Proceed to Checkout</span>
+            </div>
+            <div class="flex items-center gap-3 bg-black/10 px-3 py-1.5 rounded-xl">
+                <span class="font-bold text-lg" id="float-cart-total">$0.00</span>
+                <i class="fa-solid fa-chevron-right text-sm"></i>
+            </div>
+        </button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl z-50 flex items-center gap-2">
+        <i class="fa-solid fa-check text-brand-yellow"></i>
+        <span id="toast-msg">Item added to cart</span>
+    </div>
+
+    <script>
+        // Set Year
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // Menu Data representing the image provided
+        const menuData = [
+            {
+                category: "Main Dishes",
+                description: "Mix & Match. Count towards 5 for $65 or 10 for $120.",
+                type: "main", // important for cart logic
+                items: [
+                    { id: 'm1', name: 'Tilapia with Sautéed Mixed Peppers', desc: 'lemon caper sauce & mashed potato', premium: 0 },
+                    { id: 'm2', name: 'Braised Beef & Yuca Stew', desc: 'rice & salsa', premium: 2.99 },
+                    { id: 'm3', name: 'Beef Stroganoff (Brazilian Style)', desc: 'rice & potato sticks', premium: 2.99 },
+                    { id: 'm4', name: 'Chicken Stroganoff (Brazilian Style)', desc: 'rice & potato sticks', premium: 0 },
+                    { id: 'm5', name: 'Chicken & Okra', desc: 'rice / yellow grits / hot sauce (side)', premium: 0 },
+                    { id: 'm6', name: 'Chicken Thighs in Spicy Garlic Sauce', desc: 'rice & carrots', premium: 0 },
+                    { id: 'm7', name: 'Shrimp Moqueca', desc: 'rice & cassava porridge sauce', premium: 2.99 },
+                    { id: 'm8', name: 'Brazilian Pork & Black Bean Stew', desc: 'rice & salsa', premium: 1.99 },
+                    { id: 'm9', name: 'Beef Stew & Rice', desc: 'potatoes & carrots', premium: 1.99 },
+                    { id: 'm10', name: 'Pork Chop in Apple & Cranberry Sauce', desc: 'mashed potato & green beans', premium: 0 },
+                    { id: 'm11', name: 'Spaghetti & Meatballs', desc: '', premium: 0 },
+                    { id: 'm12', name: 'Lasagna', desc: '', premium: 0 },
+                    { id: 'm13', name: 'Beef Shepherd\'s Pie', desc: '', premium: 0 },
+                    { id: 'm14', name: 'Stuffed Cabbage & Mashed Potato', desc: '', premium: 0 },
+                    { id: 'm15', name: 'Rigatoni Pasta & Beef Ragu', desc: '', premium: 1.99 },
+                    { id: 'm16', name: 'Eggplant Rollatini', desc: '', premium: 1.99 },
+                ]
+            },
+            {
+                category: "Vegetarian Options",
+                description: "Count towards your Main Dishes mix & match.",
+                type: "main",
+                items: [
+                    { id: 'v1', name: 'Rigatoni Pasta with Homemade Tomato Basil Sauce', desc: '', premium: 0 },
+                    { id: 'v2', name: 'Cauliflower in Mixed Peppers & Coconut Sauce', desc: 'rice', premium: 0 },
+                    { id: 'v3', name: 'Spaghetti & Vegetarian Meatballs', desc: '', premium: 0 },
+                    { id: 'v4', name: 'Kabocha Squash & Okra', desc: 'rice / yellow grits', premium: 0 },
+                    { id: 'v5', name: 'Eggplant Rollatini (Veg)', desc: '', premium: 0 },
+                ]
+            },
+            {
+                category: "Kids Meals",
+                description: "Perfectly portioned for the little ones.",
+                type: "extra",
+                items: [
+                    { id: 'k1', name: 'Mac & Cheese', desc: '', price: 7 },
+                    { id: 'k2', name: 'Rice & Creamy Beans', desc: '', price: 7 },
+                    { id: 'k3', name: 'Chicken Strips & Sweet Potato Purée', desc: '', price: 8 },
+                    { id: 'k4', name: 'Pasta & Meatballs', desc: '', price: 8 },
+                    { id: 'k5', name: 'Chicken Strips with Mac & Cheese Tots', desc: '', price: 7 },
+                ]
+            },
+            {
+                category: "Sides (1 Pint)",
+                description: "Add a little extra to your week.",
+                type: "extra",
+                items: [
+                    { id: 's1', name: 'Pasta & Smoked Chicken', desc: 'pasta, smoked chicken, carrots, spicy pickles, corn, onions, mayo', price: 9 },
+                    { id: 's2', name: 'Brazilian Potato Salad', desc: 'carrots, raisins, corn, onions', price: 8 },
+                    { id: 's3', name: 'Quibe (10)', desc: 'beef, bulgur, onions, mint', price: 12 },
+                ]
+            },
+            {
+                category: "Soups (1 Pint)",
+                description: "Warm and comforting.",
+                type: "extra",
+                items: [
+                    { id: 'p1', name: 'Cream of Pumpkin & Bacon', desc: '', price: 7 },
+                    { id: 'p2', name: 'Corn Bisque', desc: '', price: 7 },
+                    { id: 'p3', name: 'Caldo Verde', desc: 'pureed potato, collard greens & sausage', price: 7 },
+                ]
+            },
+            {
+                category: "Desserts",
+                description: "End on a sweet note.",
+                type: "extra",
+                items: [
+                    { id: 'd1', name: 'Corn Pudding', desc: '', price: 5 },
+                    { id: 'd2', name: 'Passion Fruit Mousse', desc: '', price: 5 },
+                    { id: 'd3', name: 'Creamy Sweet Grits & Coconut', desc: '', price: 5 },
+                    { id: 'd4', name: 'Pumpkin & Coconut Compote', desc: '', price: 5 },
+                ]
+            }
+        ];
+
+        // State Management
+        let cart = {}; // format: { itemId: { item: {}, quantity: 1 } }
+        let isCartOpen = false;
+        const itemMap = {}; // Will hold global reference to all items
+
+        // Pricing Logic Base (when not in a bundle)
+        const SINGLE_MAIN_PRICE = 14; 
+        const BUNDLE_5_PRICE = 65; // $13 per meal avg
+        const BUNDLE_10_PRICE = 120; // $12 per meal avg
+
+        // Build itemMap on load
+        menuData.forEach(category => {
+            category.items.forEach(item => {
+                itemMap[item.id] = { ...item, type: category.type };
+            });
+        });
+
+        function renderMenu() {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+
+            menuData.forEach((category, catIndex) => {
+                const section = document.createElement('div');
+                section.className = 'bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden';
+                
+                // Category Header
+                const header = document.createElement('div');
+                header.className = 'bg-brand-light px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-20 z-20';
+                header.innerHTML = `
+                    <div>
+                        <h3 class="font-serif text-2xl font-bold text-brand-dark">${category.category}</h3>
+                        ${category.description ? `<p class="text-sm text-gray-500 mt-1">${category.description}</p>` : ''}
+                    </div>
+                `;
+                section.appendChild(header);
+
+                // Items Grid
+                const grid = document.createElement('div');
+                grid.className = 'divide-y divide-gray-50';
+
+                category.items.forEach((item, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'p-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-gray-50 transition-colors group';
+                    
+                    let priceTag = '';
+                    if (category.type === 'main') {
+                        priceTag = item.premium > 0 
+                            ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-yellow/10 text-brand-yellow border border-brand-yellow/20">Premium +$${item.premium}</span>`
+                            : '';
+                    } else {
+                        priceTag = `<span class="font-medium text-brand-green">$${(item.price || 0).toFixed(2)}</span>`;
+                    }
+
+                    row.innerHTML = `
+                        <div class="flex-1 pr-4">
+                            <div class="flex items-center gap-3 mb-1">
+                                <h4 class="font-semibold text-brand-dark">${category.type === 'main' ? (index + 1) + '. ' : ''}${item.name}</h4>
+                                ${priceTag}
+                            </div>
+                            ${item.desc ? `<p class="text-sm text-gray-500 capitalize">${item.desc}</p>` : ''}
+                        </div>
+                        <div id="menu-action-${item.id}" class="shrink-0 h-10 flex items-center sm:justify-end">
+                            <!-- Action buttons injected here -->
+                        </div>
+                    `;
+                    grid.appendChild(row);
+                });
+
+                section.appendChild(grid);
+                container.appendChild(section);
+            });
+            
+            updateMenuUI();
+        }
+
+        function updateMenuUI() {
+            Object.keys(itemMap).forEach(itemId => {
+                const container = document.getElementById(`menu-action-${itemId}`);
+                if (!container) return;
+                
+                const quantity = cart[itemId] ? cart[itemId].quantity : 0;
+                
+                if (quantity === 0) {
+                    container.innerHTML = `
+                        <button onclick="addToCart('${itemId}')" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-brand-green text-brand-green font-medium hover:bg-brand-green hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-1 border border-brand-green shadow-sm">
+                            <button onclick="updateQuantity('${itemId}', -1)" class="w-8 h-8 flex items-center justify-center text-brand-green hover:bg-white hover:shadow-sm rounded transition-all">
+                                <i class="fa-solid ${quantity === 1 ? 'fa-trash-can' : 'fa-minus'}"></i>
+                            </button>
+                            <span class="font-bold w-4 text-center text-brand-dark">${quantity}</span>
+                            <button onclick="updateQuantity('${itemId}', 1)" class="w-8 h-8 flex items-center justify-center text-brand-green hover:bg-white hover:shadow-sm rounded transition-all">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function addToCart(itemId) {
+            const item = itemMap[itemId];
+            if (!item) return;
+            
+            // Normalize item object for cart structure (extracting only necessary data)
+            const cartItem = {
+                id: item.id,
+                name: item.name,
+                type: item.type,
+                premium: item.premium || 0,
+                price: item.price || 0
+            };
+
+            if (cart[itemId]) {
+                cart[itemId].quantity += 1;
+            } else {
+                cart[itemId] = { item: cartItem, quantity: 1 };
+            }
+            updateCartState();
+            showToast(`Added ${item.name}`);
+        }
+
+        function updateQuantity(id, change) {
+            if (cart[id]) {
+                cart[id].quantity += change;
+                if (cart[id].quantity <= 0) {
+                    delete cart[id];
+                }
+                updateCartState();
+            }
+        }
+
+        function updateCartState() {
+            // Calculate totals
+            let mainCount = 0;
+            let extrasTotal = 0;
+            let baseMainsTotal = 0;
+            let premiumTotal = 0;
+
+            Object.values(cart).forEach(entry => {
+                if (entry.item.type === 'main') {
+                    mainCount += entry.quantity;
+                    premiumTotal += (entry.item.premium * entry.quantity);
+                } else {
+                    extrasTotal += (entry.item.price * entry.quantity);
+                }
+            });
+
+            // Smart Mix & Match Pricing Logic
+            if (mainCount === 0) {
+                baseMainsTotal = 0;
+            } else if (mainCount >= 10) {
+                // Tier 2: Calculate how many 10-packs, plus remainder
+                const tens = Math.floor(mainCount / 10);
+                const remainder = mainCount % 10;
+                // If remainder is >= 5, they get a 5-pack pricing for that remainder
+                if (remainder >= 5) {
+                    const fives = Math.floor(remainder / 5);
+                    const singles = remainder % 5;
+                    baseMainsTotal = (tens * BUNDLE_10_PRICE) + (fives * BUNDLE_5_PRICE) + (singles * SINGLE_MAIN_PRICE);
+                } else {
+                    baseMainsTotal = (tens * BUNDLE_10_PRICE) + (remainder * SINGLE_MAIN_PRICE);
+                }
+            } else if (mainCount >= 5) {
+                // Tier 1: 5-pack plus singles
+                const fives = Math.floor(mainCount / 5);
+                const singles = mainCount % 5;
+                baseMainsTotal = (fives * BUNDLE_5_PRICE) + (singles * SINGLE_MAIN_PRICE);
+            } else {
+                // Under 5 meals
+                baseMainsTotal = mainCount * SINGLE_MAIN_PRICE;
+            }
+
+            const grandTotal = baseMainsTotal + premiumTotal + extrasTotal;
+
+            // Update UI Elements
+            const totalItems = Object.values(cart).reduce((sum, el) => sum + el.quantity, 0);
+            
+            // Nav updates
+            document.getElementById('nav-cart-count').textContent = totalItems;
+            document.getElementById('nav-cart-count').style.opacity = totalItems > 0 ? '1' : '0';
+            document.getElementById('nav-cart-total').textContent = `$${grandTotal.toFixed(2)}`;
+            
+            // Floating Checkout Bar updates
+            document.getElementById('float-cart-count').textContent = totalItems;
+            document.getElementById('float-cart-total').textContent = `$${grandTotal.toFixed(2)}`;
+            
+            const floatBar = document.getElementById('floating-checkout-bar');
+            if (totalItems > 0 && !isCartOpen) {
+                floatBar.classList.remove('translate-y-32');
+            } else {
+                floatBar.classList.add('translate-y-32');
+            }
+
+            // Panel updates
+            document.getElementById('cart-subtotal').textContent = `$${baseMainsTotal.toFixed(2)}`;
+            document.getElementById('cart-extras').textContent = `$${(premiumTotal + extrasTotal).toFixed(2)}`;
+            document.getElementById('cart-total').textContent = `$${grandTotal.toFixed(2)}`;
+
+            updateProgressUI(mainCount);
+            renderCartItems();
+            updateMenuUI(); // Synchronize the menu inline counters
+        }
+
+        function updateProgressUI(mainCount) {
+            const bar = document.getElementById('cart-progress-bar');
+            const text = document.getElementById('cart-progress-text');
+            const hint = document.getElementById('cart-progress-hint');
+            
+            let target = 5;
+            let percentage = 0;
+
+            if (mainCount === 0) {
+                percentage = 0;
+                hint.textContent = "Add 5 meals to unlock the $65 bundle!";
+            } else if (mainCount < 5) {
+                percentage = (mainCount / 5) * 100;
+                text.textContent = `${mainCount} / 5 Meals`;
+                hint.textContent = `Add ${5 - mainCount} more to unlock the 5 for $65 tier!`;
+                hint.className = "text-xs text-brand-yellow mt-2 font-medium";
+                bar.className = "h-full bg-brand-yellow transition-all duration-500";
+            } else if (mainCount >= 5 && mainCount < 10) {
+                percentage = ((mainCount - 5) / 5) * 100;
+                if(percentage === 0) percentage = 100; // full bar for hitting 5
+                text.textContent = `${mainCount} / 10 Meals`;
+                hint.textContent = `5-Meal tier unlocked! Add ${10 - mainCount} more for the 10 for $120 tier.`;
+                hint.className = "text-xs text-brand-green mt-2 font-medium";
+                bar.className = "h-full bg-brand-green transition-all duration-500";
+            } else {
+                percentage = 100;
+                text.textContent = `${mainCount} Meals`;
+                hint.textContent = "Best value tier unlocked! 🌟";
+                hint.className = "text-xs text-brand-green mt-2 font-medium font-bold";
+                bar.className = "h-full bg-brand-green transition-all duration-500";
+            }
+
+            bar.style.width = `${percentage}%`;
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cart-items-container');
+            
+            if (Object.keys(cart).length === 0) {
+                // Re-inject the empty message cleanly instead of modifying a potentially deleted node
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-gray-400 space-y-4 py-12" id="empty-cart-msg">
+                        <i class="fa-solid fa-basket-shopping text-4xl"></i>
+                        <p>Your cart is empty.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            Object.values(cart).forEach(entry => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex justify-between items-start gap-4 pb-4 border-b border-gray-100 last:border-0';
+                
+                let detailText = '';
+                if (entry.item.type === 'main') {
+                    if (entry.item.premium > 0) detailText = `+$${entry.item.premium} premium (ea)`;
+                    else detailText = `Main Dish`;
+                } else {
+                    detailText = `$${entry.item.price} (ea)`;
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="flex-1">
+                        <h5 class="text-sm font-semibold text-brand-dark leading-tight">${entry.item.name}</h5>
+                        <p class="text-xs text-gray-400 mt-1">${detailText}</p>
+                    </div>
+                    <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-1 border border-gray-200">
+                        <button onclick="updateQuantity('${entry.item.id}', -1)" class="w-6 h-6 flex items-center justify-center text-gray-500 hover:bg-white hover:shadow-sm rounded transition-all">
+                            <i class="fa-solid fa-minus text-xs"></i>
+                        </button>
+                        <span class="text-sm font-medium w-4 text-center">${entry.quantity}</span>
+                        <button onclick="updateQuantity('${entry.item.id}', 1)" class="w-6 h-6 flex items-center justify-center text-brand-green hover:bg-white hover:shadow-sm rounded transition-all">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function toggleCart() {
+            const panel = document.getElementById('cart-panel');
+            const overlay = document.getElementById('cart-overlay');
+            const floatBar = document.getElementById('floating-checkout-bar');
+            
+            isCartOpen = !isCartOpen;
+            
+            if (isCartOpen) {
+                panel.classList.add('open');
+                overlay.classList.remove('hidden');
+                // trigger reflow
+                void overlay.offsetWidth;
+                overlay.classList.remove('opacity-0');
+                floatBar.classList.add('translate-y-32');
+                document.body.style.overflow = 'hidden'; // Prevent background scroll
+            } else {
+                panel.classList.remove('open');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+                
+                const totalItems = Object.values(cart).reduce((sum, el) => sum + el.quantity, 0);
+                if (totalItems > 0) floatBar.classList.remove('translate-y-32');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function scrollToMenu() {
+            document.getElementById('menu-section').scrollIntoView();
+        }
+
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = message;
+            toast.classList.add('show');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        function checkout(method) {
+            if (Object.keys(cart).length === 0) {
+                alert("Please add some items to your order first.");
+                return;
+            }
+
+            const phone = "15702368787";
+            let orderText = "Hi Lucy Foods Co! 🍽️\nI'd like to place an order for this week:\n\n";
+            
+            let mains = [];
+            let extras = [];
+
+            Object.values(cart).forEach(entry => {
+                const line = `- ${entry.quantity}x ${entry.item.name}`;
+                if (entry.item.type === 'main') mains.push(line);
+                else extras.push(line);
+            });
+
+            if (mains.length > 0) {
+                orderText += "*Main Dishes:*\n" + mains.join('\n') + "\n\n";
+            }
+            if (extras.length > 0) {
+                orderText += "*Sides/Extras/Kids:*\n" + extras.join('\n') + "\n\n";
+            }
+
+            const totalStr = document.getElementById('cart-total').textContent;
+            orderText += `*Estimated Total: ${totalStr}*\n\n`;
+            orderText += "Delivery Address: [Please type your address here]";
+
+            const encodedText = encodeURIComponent(orderText);
+
+            if (method === 'whatsapp') {
+                window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodedText}`, '_blank');
+            } else if (method === 'sms') {
+                // SMS links vary by OS, this is the safest broad approach
+                const ua = navigator.userAgent.toLowerCase();
+                const separator = (ua.indexOf('iphone') > -1 || ua.indexOf('ipad') > -1) ? '&' : '?';
+                window.open(`sms:+${phone}${separator}body=${encodedText}`, '_self');
+            } else if (method === 'facebook') {
+                // Cannot easily pre-fill FB messenger via deep link, so forward to page with alert
+                alert("You are being redirected to our Facebook page. Please send us a Direct Message with your order details. Tip: We will copy your order to your clipboard right now!");
+                
+                // Fallback copy to clipboard
+                const tempTextArea = document.createElement("textarea");
+                tempTextArea.value = orderText;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                }
+                document.body.removeChild(tempTextArea);
+
+                window.open('https://m.me/61592003451013', '_blank');
+            } else if (method === 'call') {
+                window.location.href = `tel:+${phone}`;
+            }
+        }
+
+        // Initialize
+        window.onload = () => {
+            renderMenu();
+        };
+
+    </script>
+</body>
+</html>
